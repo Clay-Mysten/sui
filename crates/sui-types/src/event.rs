@@ -9,15 +9,16 @@ use move_core_types::{
 use name_variant::NamedVariant;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_with::{serde_as, Bytes};
 use strum_macros::EnumDiscriminants;
 
+use crate::object::MoveObject;
 use crate::{
     base_types::{ObjectID, SequenceNumber, SuiAddress, TransactionDigest},
     committee::EpochId,
     error::SuiError,
     messages_checkpoint::CheckpointSequenceNumber,
 };
+use schemars::JsonSchema;
 
 /// A universal Sui event type encapsulating different types of events
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,7 +53,7 @@ impl EventEnvelope {
     }
 }
 
-#[derive(Eq, Debug, Clone, PartialEq, Deserialize, Serialize, Hash)]
+#[derive(Eq, Debug, Clone, PartialEq, Deserialize, Serialize, Hash, JsonSchema)]
 pub enum TransferType {
     Coin,
     ToAddress,
@@ -60,18 +61,13 @@ pub enum TransferType {
 }
 
 /// Specific type of event
-#[serde_as]
 #[derive(
     Eq, Debug, Clone, PartialEq, NamedVariant, Deserialize, Serialize, Hash, EnumDiscriminants,
 )]
 #[strum_discriminants(name(EventType))]
 pub enum Event {
     /// Move-specific event
-    MoveEvent {
-        type_: StructTag,
-        #[serde_as(as = "Bytes")]
-        contents: Vec<u8>,
-    },
+    MoveEvent(MoveObject),
     /// Module published
     Publish { package_id: ObjectID },
     /// Transfer objects to new address / wrap in another object / coin
@@ -93,7 +89,7 @@ pub enum Event {
 
 impl Event {
     pub fn move_event(type_: StructTag, contents: Vec<u8>) -> Self {
-        Event::MoveEvent { type_, contents }
+        Event::MoveEvent(MoveObject::new(type_, contents))
     }
 
     /// Returns the EventType associated with an Event
@@ -118,9 +114,7 @@ impl Event {
     /// Extract a module ID, if available, from a SuiEvent
     pub fn module_id(&self) -> Option<ModuleId> {
         match self {
-            Event::MoveEvent {
-                type_: struct_tag, ..
-            } => Some(struct_tag.module_id()),
+            Event::MoveEvent(event) => Some(event.type_.module_id()),
             _ => None,
         }
     }
@@ -131,8 +125,8 @@ impl Event {
         resolver: &impl GetModule,
     ) -> Result<Option<MoveStruct>, SuiError> {
         match self {
-            Event::MoveEvent { type_, contents } => {
-                let typestruct = TypeTag::Struct(type_.clone());
+            Event::MoveEvent(event_obj) => {
+                let typestruct = TypeTag::Struct(event_obj.type_.clone());
                 let layout =
                     TypeLayoutBuilder::build_with_fields(&typestruct, resolver).map_err(|e| {
                         SuiError::ObjectSerializationError {
@@ -141,11 +135,11 @@ impl Event {
                     })?;
                 match layout {
                     MoveTypeLayout::Struct(l) => {
-                        let s = MoveStruct::simple_deserialize(contents, &l).map_err(|e| {
-                            SuiError::ObjectSerializationError {
+                        let s = MoveStruct::simple_deserialize(event_obj.contents(), &l).map_err(
+                            |e| SuiError::ObjectSerializationError {
                                 error: e.to_string(),
-                            }
-                        })?;
+                            },
+                        )?;
                         Ok(Some(s))
                     }
                     _ => unreachable!(
