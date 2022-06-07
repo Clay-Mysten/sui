@@ -1214,6 +1214,6 @@ where
         &self,
         digest: TransactionDigest,
     ) -> Result<TransactionEffectsResponse, anyhow::Error> {
-        QueryHelpers::get_transaction(&self.store, digest)
+        QueryHelpers::get_transaction(&self.store, &self.module_cache, digest)
     }
 }
