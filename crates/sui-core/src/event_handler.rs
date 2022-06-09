@@ -92,7 +92,7 @@ pub enum EventFilter {
 }
 // TODO: implement other filter types
 impl EventFilter {
-    fn maybe_matches(&self, item: &EventEnvelope) -> Result<bool, anyhow::Error> {
+    fn try_matches(&self, item: &EventEnvelope) -> Result<bool, anyhow::Error> {
         Ok(match self {
             EventFilter::ByType(event_type, fields_filter) => match &item.event {
                 Event::MoveEvent(event_obj) => {
@@ -120,6 +120,6 @@ impl EventFilter {
 
 impl Filter<EventEnvelope> for EventFilter {
     fn matches(&self, item: &EventEnvelope) -> bool {
-        self.maybe_matches(item).unwrap_or_default()
+        self.try_matches(item).unwrap_or_default()
     }
 }
