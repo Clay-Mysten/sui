@@ -15,7 +15,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
 use tokio_stream::Stream;
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 
 use sui_types::object::ObjectFormatOptions;
 use sui_types::{
