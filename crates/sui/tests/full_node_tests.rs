@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use futures::StreamExt;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use sui::wallet_commands::{WalletCommandResult, WalletCommands, WalletContext};
 use sui_core::authority::AuthorityState;
 use sui_node::SuiNode;
