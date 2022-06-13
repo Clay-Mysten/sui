@@ -12,7 +12,7 @@ use jsonrpsee_proc_macros::rpc;
 use move_core_types::parser::parse_struct_tag;
 use serde::Serialize;
 use serde_json::Value;
-use tracing::{error, warn};
+use tracing::warn;
 
 use sui_core::authority::AuthorityState;
 use sui_core::event_filter::EventFilter;
