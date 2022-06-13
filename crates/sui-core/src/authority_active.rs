@@ -52,6 +52,8 @@ use gossip::gossip_process;
 pub mod checkpoint_driver;
 use checkpoint_driver::checkpoint_process;
 
+pub mod execution_driver;
+
 use self::checkpoint_driver::CheckpointProcessControl;
 
 // TODO: Make these into a proper config
